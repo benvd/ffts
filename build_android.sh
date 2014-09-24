@@ -5,13 +5,13 @@
 
 INSTALL_DIR="`pwd`/java/android/bin"
 
-PLATFORM=android-8
-TOOL="4.6"
+PLATFORM=android-19
+TOOL="4.8"
 
 case $(uname -s) in
   Darwin)
     CONFBUILD=i386-apple-darwin`uname -r`
-    HOSTPLAT=darwin-x86
+    HOSTPLAT=darwin-`uname -m`
   ;;
   Linux)
     CONFBUILD=x86-unknown-linux
@@ -47,6 +47,7 @@ echo "Using: $NDK_ROOT/toolchains/${TARGPLAT}-${TOOL}/prebuilt/${HOSTPLAT}/bin"
 export PATH="$NDK_ROOT/toolchains/${TARGPLAT}-${TOOL}/prebuilt/${HOSTPLAT}/bin/:$PATH"
 export SYS_ROOT="$NDK_ROOT/platforms/${PLATFORM}/arch-${ARCH}/"
 export CC="${TARGPLAT}-gcc --sysroot=$SYS_ROOT"
+export CXX="${TARGPLAT}-g++ --sysroot=$SYS_ROOT"
 export LD="${TARGPLAT}-ld"
 export AR="${TARGPLAT}-ar"
 export RANLIB="${TARGPLAT}-ranlib"
@@ -54,27 +55,8 @@ export STRIP="${TARGPLAT}-strip"
 export CFLAGS="-Os"
 
 mkdir -p $INSTALL_DIR
-./configure --enable-neon --build=${CONFBUILD} --host=${CONFTARG} --prefix=$INSTALL_DIR LIBS="-lc -lgcc"
+./configure --enable-neon --build=${CONFBUILD} --host=${TARGPLAT} --prefix=$INSTALL_DIR LIBS="-lc -lgcc -llog"
 
 make clean
 make
 make install
-
-if [ -z "$ANDROID_HOME" ] ; then
-    echo ""
-    echo " No ANDROID_HOME defined"
-    echo " Android JNI interfaces will not be built"
-    echo
-else
-    echo
-    echo "Using android_home ${ANDROID_HOME}"
-    echo
-    ( cd java/android ; ${ANDROID_HOME}/tools/android update lib-project -p . ) || exit 1
-    ( cd java/android/jni ; ${NDK_ROOT}/ndk-build V=1 ) || exit 1
-    ( cd java/android ; ant release ) || exit 1
-    echo
-    echo "Android library project location:"
-    echo " `pwd`/java/android"
-    echo
-fi
-exit 0
